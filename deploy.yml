@@ -2,7 +2,7 @@
   hosts: staging
   become: yes
   vars:
-    app_path: /var/www/ma_sovitchea
+    app_path: /var/www/html/ma_sovitchea
 
   tasks:
     - name: Ensure app directory exists
@@ -44,7 +44,7 @@
         force: no
 
     - name: Generate app key
-      command: php artisan key:generate
+      command: /usr/bin/php8.4 artisan key:generate
       args:
         chdir: "{{ app_path }}"
 
