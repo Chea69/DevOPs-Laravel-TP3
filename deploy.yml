@@ -1,0 +1,78 @@
+- name: Deploy Laravel project
+  hosts: staging
+  become: yes
+  vars:
+    app_path: /var/www/ma_sovitchea
+
+  tasks:
+    - name: Ensure app directory exists
+      file:
+        path: "{{ app_path }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy only important project files
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ app_path }}/"
+      loop:
+        - { src: "app", dest: "app" }
+        - { src: "bootstrap", dest: "bootstrap" }
+        - { src: "config", dest: "config" }
+        - { src: "database", dest: "database" }
+        - { src: "public", dest: "public" }
+        - { src: "resources", dest: "resources" }
+        - { src: "routes", dest: "routes" }
+        - { src: "storage", dest: "storage" }
+        - { src: "artisan", dest: "artisan" }
+        - { src: "composer.json", dest: "composer.json" }
+        - { src: "composer.lock", dest: "composer.lock" }
+        - { src: "package.json", dest: "package.json" }
+        - { src: "vite.config.js", dest: "vite.config.js" }
+        - { src: ".env.example", dest: ".env.example" }
+
+    - name: Install composer dependencies
+      command: composer install --no-interaction --prefer-dist --optimize-autoloader
+      args:
+        chdir: "{{ app_path }}"
+
+    - name: Copy .env if missing
+      copy:
+        src: "{{ app_path }}/.env.example"
+        dest: "{{ app_path }}/.env"
+        remote_src: yes
+        force: no
+
+    - name: Generate app key
+      command: php artisan key:generate
+      args:
+        chdir: "{{ app_path }}"
+
+    - name: Set correct ownership
+      file:
+        path: "{{ app_path }}"
+        owner: www-data
+        group: www-data
+        mode: '0755'
+        recurse: yes
+
+    - name: Set storage permissions
+      file:
+        path: "{{ item }}"
+        owner: www-data
+        group: www-data
+        mode: '0775'
+        recurse: yes
+      loop:
+        - "{{ app_path }}/storage"
+        - "{{ app_path }}/bootstrap/cache"
+
+    - name: Clear config cache
+      command: php artisan config:clear
+      args:
+        chdir: "{{ app_path }}"
+
+    - name: Cache config
+      command: php artisan config:cache
+      args:
+        chdir: "{{ app_path }}"
