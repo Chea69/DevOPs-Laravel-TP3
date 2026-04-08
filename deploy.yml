@@ -48,6 +48,21 @@
       args:
         chdir: "{{ app_path }}"
 
+    - name: Install npm dependencies
+      command: npm install
+      args:
+        chdir: "{{ app_path }}"
+
+    - name: Build frontend
+      command: npm run build
+      args:
+        chdir: "{{ app_path }}"
+
+    - name: Run migrations
+      command: /usr/bin/php8.4 artisan migrate --force
+      args:
+        chdir: "{{ app_path }}"
+
     - name: Set correct ownership
       file:
         path: "{{ app_path }}"
@@ -68,11 +83,11 @@
         - "{{ app_path }}/bootstrap/cache"
 
     - name: Clear config cache
-      command: php artisan config:clear
+      command: /usr/bin/php8.4 artisan config:clear
       args:
         chdir: "{{ app_path }}"
 
     - name: Cache config
-      command: php artisan config:cache
+      command: /usr/bin/php8.4 artisan config:cache
       args:
         chdir: "{{ app_path }}"
